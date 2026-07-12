@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="620" viewBox="0 0 1120 620">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#2f3a4a"/>
+    </marker>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; fill: #1f2937; }
+      .title { font-size: 30px; font-weight: 700; }
+      .subtitle { font-size: 17px; fill: #526070; }
+      .label { font-size: 18px; font-weight: 650; }
+      .small { font-size: 15px; fill: #526070; }
+      .box { fill: #ffffff; stroke: #9aa7b8; stroke-width: 2; rx: 8; }
+      .model { fill: #eef6ff; stroke: #4b8fd8; stroke-width: 2; rx: 8; }
+      .vec { fill: #f3fbf2; stroke: #57a55a; stroke-width: 2; rx: 8; }
+      .score { fill: #fff7e8; stroke: #d99a28; stroke-width: 2; rx: 8; }
+      .panel { fill: #f8fafc; stroke: #d4dce7; stroke-width: 2; rx: 12; }
+      .line { stroke: #2f3a4a; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+      .dash { stroke: #7b8794; stroke-width: 2; stroke-dasharray: 6 6; fill: none; }
+    </style>
+  </defs>
+
+  <rect width="1120" height="620" fill="#ffffff"/>
+  <text x="560" y="48" class="title" text-anchor="middle">Dual Tower vs Cross-Encoder</text>
+  <text x="560" y="78" class="subtitle" text-anchor="middle">一个先分别编码再比相似度；一个把 query 和 document 放在一起直接判断相关性</text>
+
+  <rect x="45" y="115" width="500" height="450" class="panel"/>
+  <text x="295" y="155" class="label" text-anchor="middle">双塔 / Bi-Encoder</text>
+  <text x="295" y="182" class="small" text-anchor="middle">Qwen3-Embedding 属于这一类</text>
+
+  <rect x="85" y="225" width="145" height="58" class="box"/>
+  <text x="157.5" y="260" class="label" text-anchor="middle">Query</text>
+
+  <rect x="85" y="380" width="145" height="58" class="box"/>
+  <text x="157.5" y="415" class="label" text-anchor="middle">Document</text>
+
+  <rect x="290" y="215" width="170" height="78" class="model"/>
+  <text x="375" y="246" class="label" text-anchor="middle">Encoder</text>
+  <text x="375" y="270" class="small" text-anchor="middle">同一个模型/共享权重</text>
+
+  <rect x="290" y="370" width="170" height="78" class="model"/>
+  <text x="375" y="401" class="label" text-anchor="middle">Encoder</text>
+  <text x="375" y="425" class="small" text-anchor="middle">可提前离线编码文档</text>
+
+  <rect x="365" y="305" width="105" height="38" class="vec"/>
+  <text x="417.5" y="330" class="small" text-anchor="middle">q vector</text>
+
+  <rect x="365" y="465" width="105" height="38" class="vec"/>
+  <text x="417.5" y="490" class="small" text-anchor="middle">d vector</text>
+
+  <rect x="285" y="515" width="185" height="42" class="score"/>
+  <text x="377.5" y="541" class="label" text-anchor="middle">cosine / dot</text>
+
+  <path d="M230 254 L290 254" class="line"/>
+  <path d="M230 409 L290 409" class="line"/>
+  <path d="M405 293 L405 305" class="line"/>
+  <path d="M405 448 L405 465" class="line"/>
+  <path d="M405 343 C405 405 340 454 340 515" class="line"/>
+  <path d="M405 503 C405 508 405 512 405 515" class="line"/>
+
+  <text x="85" y="520" class="small">特点：</text>
+  <text x="85" y="545" class="small">快，适合海量召回；交互信息较弱</text>
+
+  <rect x="575" y="115" width="500" height="450" class="panel"/>
+  <text x="825" y="155" class="label" text-anchor="middle">Cross-Encoder</text>
+  <text x="825" y="182" class="small" text-anchor="middle">Qwen3-Reranker 属于这一类</text>
+
+  <rect x="615" y="230" width="145" height="58" class="box"/>
+  <text x="687.5" y="265" class="label" text-anchor="middle">Query</text>
+
+  <rect x="615" y="350" width="145" height="58" class="box"/>
+  <text x="687.5" y="385" class="label" text-anchor="middle">Document</text>
+
+  <rect x="810" y="275" width="210" height="98" class="model"/>
+  <text x="915" y="310" class="label" text-anchor="middle">LLM / Cross-Encoder</text>
+  <text x="915" y="337" class="small" text-anchor="middle">Query 和 Document</text>
+  <text x="915" y="359" class="small" text-anchor="middle">在每层 attention 中交互</text>
+
+  <rect x="835" y="455" width="160" height="58" class="score"/>
+  <text x="915" y="480" class="label" text-anchor="middle">Score</text>
+  <text x="915" y="502" class="small" text-anchor="middle">P(yes | q, d)</text>
+
+  <path d="M760 259 C780 259 790 300 810 310" class="line"/>
+  <path d="M760 379 C780 379 790 345 810 340" class="line"/>
+  <path d="M915 373 L915 455" class="line"/>
+
+  <path d="M642 318 L994 318" class="dash"/>
+  <text x="642" y="442" class="small">特点：</text>
+  <text x="642" y="467" class="small">准，能细粒度匹配；慢，通常用于重排 Top-K</text>
+</svg>
