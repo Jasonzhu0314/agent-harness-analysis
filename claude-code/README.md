@@ -6,6 +6,10 @@
 
 https://github.com/anthropics/claude-code
 
+## 笔记
+
+暂无内容，待分析。
+
 ## 分析要点
 
 - [ ] Agent 循环与状态机

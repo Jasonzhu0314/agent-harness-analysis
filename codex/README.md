@@ -6,10 +6,15 @@
 
 https://github.com/openai/codex
 
+## 笔记
+
+- [Goal 执行原理说明](Goal执行原理说明.md)
+- [Loop 工程与 Codex 项目实现调研](Loop工程与Codex项目实现调研.md)
+
 ## 分析要点
 
-- [ ] CLI 入口与命令分发
-- [ ] Agent 循环（plan → act → observe）
-- [ ] 工具注册与调用机制
+- [x] CLI 入口与命令分发
+- [x] Agent 循环（plan → act → observe）
+- [x] 工具注册与调用机制
 - [ ] 上下文管理与 token 策略
 - [ ] 沙箱与安全隔离
