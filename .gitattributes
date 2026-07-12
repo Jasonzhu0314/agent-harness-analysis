@@ -1,0 +1,4 @@
+# GitHub linguist 语言识别
+*.md linguist-detectable=true
+*.py linguist-detectable=true
+*.svg linguist-detectable=false

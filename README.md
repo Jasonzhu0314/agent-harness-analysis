@@ -1,5 +1,7 @@
 # Agent Harness Analysis
 
+![Python](https://img.shields.io/badge/language-Python-blue)
+
 深入源码，分析主流 AI Agent 框架的 Harness（运行引擎）实现方案。
 
 ## 分析范围
