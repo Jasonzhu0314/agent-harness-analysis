@@ -18,6 +18,8 @@
 | **MinerU** | 文档解析工具，高质量 PDF/文档提取 |
 | **Mem0** | 记忆存储层，为 Agent 提供持久化记忆 |
 | **DeepEval** | Agent 评测框架，LLM 评估与测试 |
+| **Dify** | 开源 LLM 应用平台，Agent/RAG/Workflow |
+| **Embedding** | 向量嵌入与 Reranker 模型分析 |
 
 ## 分析维度
 
@@ -39,7 +41,9 @@
 ├── deepagents/     # LangChain DeepAgents
 ├── mineru/         # 文档解析 MinerU
 ├── mem0/           # 记忆存储 Mem0
-└── deepeval/       # Agent 评测 DeepEval
+├── deepeval/       # Agent 评测 DeepEval
+├── dify/           # LLM 应用平台 Dify
+└── embedding/      # 向量嵌入 & Reranker
 ```
 
 ## 初衷
