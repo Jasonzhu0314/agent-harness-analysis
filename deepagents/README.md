@@ -8,7 +8,9 @@ https://github.com/langchain-ai/deepagents
 
 ## 笔记
 
-- [Resource Locking 与 Version Check](resource-locking-and-version-check.md)
+- [待办参数说明](deepagents待办参数说明.md)
+- [Interrupt 机制分析](interrupt-analysis.md)
+- [并发写资源处理](并发写资源处理笔记.md)
 - [Skill 加载说明](deepagents-skill加载说明.md)
 - [LangChain 与 LangGraph 的区别](LangChain与LangGraph的区别.md)
 - [工具调用 Human-in-the-loop 原理](LangGraph工具调用Human-in-the-loop原理.md)
