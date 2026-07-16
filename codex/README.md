@@ -11,6 +11,8 @@ https://github.com/openai/codex
 - [Goal 执行原理说明](Goal执行原理说明.md)
 - [Loop 工程与 Codex 项目实现调研](Loop工程与Codex项目实现调研.md)
 - [Codex 中直接使用 Skill 的内部逻辑](Codex中直接使用Skill的内部逻辑.md)
+- [上下文压缩与历史检索分析](上下文压缩与历史检索分析.md)
+- [上下文过长示例](上下文过长示例.md)
 
 ## 分析要点
 
