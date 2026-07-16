@@ -485,3 +485,225 @@ MemorySaver()
 - 审计日志如何记录
 
 核心原则是：`interrupt()` 只负责暂停和恢复，业务安全策略需要在 HTTP 层和工具执行层共同保证。
+
+## 十三、HTTP 请求中的 HITL 如何和前端交互
+
+HTTP 场景里容易误解的一点是：`interrupt()` 并不是让当前 Python 进程一直阻塞，等前端用户点击按钮。
+
+更准确的理解是：
+
+```text
+图执行到 interrupt()
+LangGraph 保存当前图状态
+当前 graph.stream / graph.invoke 产出 interrupt 事件
+后端把 interrupt payload 返回给前端
+前端展示审批 UI
+用户点击 approve / reject
+前端再发一个 /resume 请求
+后端用 Command(resume=...) 恢复图执行
+```
+
+也就是说，HTTP 里通常不是“一个请求一直挂住等待用户操作”，而是两个阶段。
+
+### 1. 第一次请求：启动并返回中断
+
+前端调用：
+
+```http
+POST /start
+```
+
+后端执行：
+
+```python
+for update in graph.stream(initial_state, config=config, stream_mode="updates"):
+    interrupt_payload = _extract_interrupt(update)
+    if interrupt_payload is not None:
+        return {
+            "thread_id": thread_id,
+            "status": "interrupted",
+            "interrupt": interrupt_payload,
+        }
+```
+
+当图执行到：
+
+```python
+resume_payload = interrupt(interrupt_payload)
+```
+
+LangGraph 会：
+
+- 保存当前 state
+- 记录当前暂停在哪个节点
+- 产出 `__interrupt__`
+- 暂停这次图执行
+
+后端拿到 `__interrupt__` 后，把审批内容返回给前端。
+
+典型响应：
+
+```json
+{
+  "thread_id": "9c3a2ea2-f93f-4507-97c8-13aee8f87f7f",
+  "status": "interrupted",
+  "interrupt": {
+    "action_requests": [
+      {
+        "name": "query_order_status",
+        "args": {
+          "order_id": "ORD-1001"
+        }
+      },
+      {
+        "name": "create_support_ticket",
+        "args": {
+          "summary": "订单 ORD-1001 支付后结账页返回 500 错误",
+          "priority": "P1"
+        }
+      }
+    ],
+    "review_configs": [
+      {
+        "action_name": "query_order_status",
+        "allowed_decisions": ["approve", "reject"]
+      },
+      {
+        "action_name": "create_support_ticket",
+        "allowed_decisions": ["approve", "reject"]
+      }
+    ]
+  }
+}
+```
+
+前端此时应该：
+
+- 保存 `thread_id`
+- 展示 `interrupt.action_requests`
+- 让用户选择 approve 或 reject
+
+### 2. 第二次请求：带审批结果恢复
+
+用户审批后，前端调用：
+
+```http
+POST /resume
+```
+
+请求体示例：
+
+```json
+{
+  "thread_id": "9c3a2ea2-f93f-4507-97c8-13aee8f87f7f",
+  "decisions": [
+    {"type": "approve"},
+    {"type": "approve"}
+  ]
+}
+```
+
+后端执行：
+
+```python
+graph.stream(
+    Command(resume={"decisions": decisions}),
+    config={"configurable": {"thread_id": thread_id}},
+    stream_mode="updates",
+)
+```
+
+这里最关键的是：
+
+```python
+config={"configurable": {"thread_id": thread_id}}
+```
+
+必须和 `/start` 时使用同一个 `thread_id`。
+
+这样 LangGraph 才能从 checkpointer 中找到之前暂停的图状态，并从 `interrupt()` 那一行继续。
+
+### 3. `stream` 在这里起什么作用
+
+流式响应不是 HITL 的必要条件，但它非常适合这个场景。
+
+不用流式也可以做 HITL，只是你需要在调用结束后检查 state 或 interrupt 信息。
+
+使用 `graph.stream(...)` 的好处是：
+
+- 后端可以实时看到每个节点的执行事件
+- 可以及时捕获 `__interrupt__`
+- 可以把模型 chunk、工具调用计划、节点 update 推给前端
+- 一旦看到 `__interrupt__`，后端就停止继续消费图流，并返回或推送审批事件
+
+所以不是“因为使用了流式响应，所以图刚好停在那里”。
+
+更准确地说：
+
+```text
+interrupt() 负责让 LangGraph 暂停并保存状态；
+stream 负责让后端及时观察到这个暂停事件；
+thread_id + checkpointer 负责让下一次 HTTP 请求能恢复执行。
+```
+
+### 4. HTTP + SSE / WebSocket 的常见组合
+
+如果前端希望实时看到执行过程，常见设计是：
+
+```text
+POST /start
+  创建 thread_id
+  后端开始 graph.stream
+  通过 SSE / WebSocket 推送节点事件和模型 token
+  遇到 __interrupt__ 时推送 approval_required 事件
+  暂停图执行
+
+POST /resume
+  前端提交审批结果
+  后端用 Command(resume=...) 恢复
+  继续通过 SSE / WebSocket 推送后续事件
+```
+
+如果不需要实时过程，也可以简单使用普通 HTTP：
+
+```text
+POST /start
+  返回 interrupted + interrupt payload
+
+POST /resume
+  返回 completed + final values
+```
+
+当前 `examples/http_hitl_resume_demo.py` 用的是第二种方式，更容易看清楚原理。
+
+### 5. 为什么不能只靠前端等待
+
+如果让一个 HTTP 请求一直挂起，等用户在前端点击审批，有几个问题：
+
+- HTTP 连接可能超时
+- 浏览器、网关、负载均衡都有超时限制
+- 用户可能很久才审批
+- 服务重启或进程重启会丢掉调用栈
+- 多人审批、异步审批很难处理
+
+所以更稳妥的架构是：
+
+```text
+interrupt 后立即返回
+把 thread_id 和审批 payload 存起来
+前端或审批系统稍后调用 /resume
+```
+
+生产环境还应把 checkpointer 换成持久化存储，而不是 `MemorySaver()`。
+
+### 6. 一句话总结
+
+HTTP 场景下的 LangGraph HITL 不是同步阻塞等待用户，而是“中断并保存状态，然后通过下一次请求恢复执行”。
+
+三个核心要素是：
+
+```text
+interrupt()              产出中断并暂停图
+thread_id + checkpointer 保存并定位暂停状态
+Command(resume=...)      把用户审批结果送回暂停点
+```
